@@ -17,8 +17,7 @@ class Dataset:
 
     def build(self, start, window, lookback, slide):
         trD = self.series.data[start:start+window]
-        tsD = self.series.data[start+slide:start+slide+window]
-
+        tsD = self.series.data[start+window-lookback:start+window+slide]
         trX, trY = self.make(trD, lookback)
         tsX, tsY = self.make(tsD, lookback)
 
@@ -27,7 +26,7 @@ class Dataset:
     def gen(self, window=100, lookback=10, slide=50):
         start = 0
 
-        while(start + window < len(self.series.data)):
+        while(start+window < len(self.series.data)):
             trX, trY, tsX, tsY = self.build(start, window, lookback, slide)
             yield trX, trY, tsX, tsY
             start += slide
