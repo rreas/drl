@@ -1,11 +1,11 @@
-from numpy import array, log
+from numpy import array
 from series import Series
-from window import Window
 
 class Dataset:
     
-    def __init__(self, raw):
+    def __init__(self, raw, side):
         self.series = Series(raw)
+        self.side   = Series(side)
 
     def make(self, data, lookback):
         x = []; y = []

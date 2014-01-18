@@ -6,8 +6,8 @@ from models import Linear, Nonlinear
 
 class Trainer:
 
-    def __init__(self, raw, model, lookback=10, size=100):
-        self.dataset = Dataset(raw)
+    def __init__(self, dataset, model, lookback=10, size=100):
+        self.dataset = dataset
         self.model = model
         self.lookback = lookback
         self.size = size
