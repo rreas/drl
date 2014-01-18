@@ -1,32 +1,47 @@
-from numpy import array
-from series import Series
+from numpy import array, float64, append, log
 
 class Dataset:
     
-    def __init__(self, raw, side):
-        self.series = Series(raw)
-        self.side   = Series(side)
+    def __init__(self, data, side):
+        self.data = array(data, float64)
+        self.side = array(side, float64)
 
-    def make(self, data, lookback):
+    def make(self, data, side, lookback):
         x = []; y = []
-        for i in range(0, len(data)-lookback):
+
+        # Scale price series and add in.
+        scaled = (data[1:] - data[:-1]) / data[:-1]
+
+        for i in range(0, len(scaled)-lookback+1):
             j = i + lookback
-            x.append(data[i:j])
-            y.append(data[j])
+
+            # Initial example with scaled prices.
+            temp_x = scaled[i:j-1]
+
+            # Add in side information relative to prices.
+            for s in side:
+                temp_x = append(temp_x, log(s[i:j] / data[i:j]))
+
+            # Save the example and label just created.
+            x.append(temp_x)
+            y.append(scaled[j-1])
+
         return x, y
 
     def build(self, start, window, lookback, slide):
-        trD = self.series.data[start:start+window]
-        tsD = self.series.data[start+window-lookback:start+window+slide]
-        trX, trY = self.make(trD, lookback)
-        tsX, tsY = self.make(tsD, lookback)
+        trD = self.data[start:start+window]
+        trS = self.side[:,start:start+window]
+        tsD = self.data[start+window-lookback:start+window+slide]
+        tsS = self.side[:,start+window-lookback:start+window+slide]
+
+        trX, trY = self.make(trD, trS, lookback)
+        tsX, tsY = self.make(tsD, tsS, lookback)
 
         return trX, trY, tsX, tsY
 
     def gen(self, window=100, lookback=10, slide=50):
         start = 0
 
-        while(start+window < len(self.series.data)):
-            trX, trY, tsX, tsY = self.build(start, window, lookback, slide)
-            yield trX, trY, tsX, tsY
+        while(start+window < len(self.data)):
+            yield self.build(start, window, lookback, slide)
             start += slide
