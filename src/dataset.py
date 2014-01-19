@@ -22,8 +22,8 @@ class Dataset:
             for s in side:
                 temp_x = append(temp_x, log(s[i:j] / data[i:j]))
 
-            # Save the example and label just created.
-            x.append(temp_x)
+            # Save the example with bias and label just created.
+            x.append(append(1, temp_x))
             y.append(scaled[j-1])
 
         return x, y

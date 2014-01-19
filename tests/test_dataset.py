@@ -32,16 +32,16 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(2, len(self.train_examples[0]))
 
         assert_array_almost_equal(self.train_examples[0][0],
-                append([1./1, 1./2], log([2./1, 3./2, 4./3, 3./1, 4./2, 5./3])))
+                append([1., 1./1, 1./2], log([2./1, 3./2, 4./3, 3./1, 4./2, 5./3])))
         assert_array_almost_equal(self.train_examples[0][1],
-                append([1./2, 1./3], log([3./2, 4./3, 5./4, 4./2, 5./3, 6./4])))
+                append([1., 1./2, 1./3], log([3./2, 4./3, 5./4, 4./2, 5./3, 6./4])))
 
         self.assertEqual(2, len(self.train_examples[1]))
 
         assert_array_almost_equal(self.train_examples[1][0],
-                append([1./5, 1./6], log([6./5, 7./6, 8./7, 7./5, 8./6, 9./7])))
+                append([1., 1./5, 1./6], log([6./5, 7./6, 8./7, 7./5, 8./6, 9./7])))
         assert_array_almost_equal(self.train_examples[1][1],
-                append([1./6, 1./7], log([7./6, 8./7, 9./8, 8./6, 9./7, 10./8])))
+                append([1., 1./6, 1./7], log([7./6, 8./7, 9./8, 8./6, 9./7, 10./8])))
 
     def test_creates_training_returns(self):
         self.generate(5, 3, 4)
@@ -60,18 +60,18 @@ class TestDataset(unittest.TestCase):
         self.assertEqual(4, len(self.test_examples[0]))
 
         assert_array_almost_equal(self.test_examples[0][0],
-                append([1./3, 1./4], log([4./3, 5./4, 6./5, 5./3, 6./4, 7./5])))
+                append([1., 1./3, 1./4], log([4./3, 5./4, 6./5, 5./3, 6./4, 7./5])))
         assert_array_almost_equal(self.test_examples[0][1],
-                append([1./4, 1./5], log([5./4, 6./5, 7./6, 6./4, 7./5, 8./6])))
+                append([1., 1./4, 1./5], log([5./4, 6./5, 7./6, 6./4, 7./5, 8./6])))
         assert_array_almost_equal(self.test_examples[0][2],
-                append([1./5, 1./6], log([6./5, 7./6, 8./7, 7./5, 8./6, 9./7])))
+                append([1., 1./5, 1./6], log([6./5, 7./6, 8./7, 7./5, 8./6, 9./7])))
         assert_array_almost_equal(self.test_examples[0][3],
-                append([1./6, 1./7], log([7./6, 8./7, 9./8, 8./6, 9./7, 10./8])))
+                append([1., 1./6, 1./7], log([7./6, 8./7, 9./8, 8./6, 9./7, 10./8])))
 
         self.assertEqual(1, len(self.test_examples[1]))
 
         assert_array_almost_equal(self.test_examples[1][0],
-                append([1./7, 1./8], log([8./7, 9./8, 10./9, 9./7, 10./8, 11./9])))
+                append([1., 1./7, 1./8], log([8./7, 9./8, 10./9, 9./7, 10./8, 11./9])))
 
     def test_creates_testing_returns(self):
         self.generate(5, 3, 4)

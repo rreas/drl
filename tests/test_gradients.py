@@ -20,7 +20,7 @@ class TestGradients(unittest.TestCase):
             self.prices_apl = cPickle.load(pkl)[:length]
 
         self.data = Dataset(self.prices_jnj, [self.prices_apl])
-        self.trX, self.trY, _, _ = self.data.build(0, 100, 5, 50)
+        self.trX, self.trY, _, _ = self.data.build(0, 75, 5, 50)
 
     def test_linear_mean_return_model(self):
         model = Linear(lookback=10, delta=0.1, lmb=1.)
@@ -32,4 +32,4 @@ class TestGradients(unittest.TestCase):
                               self.trX,
                               self.trY)
 
-            self.assertTrue(diff < 1.e-8, diff)
+            self.assertTrue(diff < 1.e-6, diff)

@@ -42,19 +42,6 @@ class Linear(Model):
 
     def cost(self, params, x, y):
         return -1 * self.mean_return(params, x, y)
-#        w, alpha = self.inflate(params)
-#
-#        d_prev = self.decide(0., x[0], w, alpha)
-#        r_curr = self.calc_r(d_prev, 0., y[0])
-#        A_curr = r_curr
-#
-#        for i in range(1, len(y)):
-#            d_curr = self.decide(d_prev, x[i], w, alpha)
-#            r_curr = self.calc_r(d_curr, d_prev, y[i])
-#            A_curr = A_curr + (1./i) * (r_curr - A_curr)
-#            d_prev = d_curr
-#
-#        return A_curr
 
     def grad(self, params, x, y):
         w, alpha = self.inflate(params)
