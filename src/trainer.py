@@ -1,33 +1,20 @@
-from scipy.optimize import minimize
-from numpy import append
-
-from dataset import Dataset
-from models import Linear, Nonlinear
-
 class Trainer:
 
-    def __init__(self, dataset, model, lookback=10, size=100):
+    def __init__(self, dataset, model, window=100, lookback=10, slide=50):
         self.dataset = dataset
         self.model = model
+        self.window = window
         self.lookback = lookback
-        self.size = size
+        self.slide = slide
 
-    def train(self, maxiter=200):
-        returns = []
-        weights = None
-        previous = 0.
+    def train(self, maxiter=20):
+        trX, trY, _, _ = self.dataset.build(0, 100, 5, 50)
+        weights = self.model.weights(trX, seed=1)
 
-        for x, y in self.dataset.gen(size=self.size, lookback=self.lookback):
-            # Make a prediction if we have trained.
-            if weights is not None:
-                pred = self.model.pred(weights, append(x[0], [previous, 1.]))
-                returns.append(self.model.retval(y[0], pred, previous))
-                previous = pred
+        for i in range(maxiter):
+            # Update weights with SGD.
+            cost = self.model.cost(weights, trX, trY)
+            gradient = self.model.grad(weights, trX, trY)
+            weights = weights + 1.0*gradient
 
-            # Train model on available data
-            weights = minimize(self.model.cost,
-                               self.model.initial_weights(),
-                               (x, y),
-                               options={'disp': False, 'maxiter': maxiter}).x
-        
-        return returns
+            print "Iter ", i, ": ", self.model.mean_return(weights, trX, trY)

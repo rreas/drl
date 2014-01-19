@@ -30,9 +30,13 @@ class Dataset:
 
     def build(self, start, window, lookback, slide):
         trD = self.data[start:start+window]
-        trS = self.side[:,start:start+window]
         tsD = self.data[start+window-lookback:start+window+slide]
-        tsS = self.side[:,start+window-lookback:start+window+slide]
+
+        if len(self.side) > 0:
+            trS = self.side[:,start:start+window]
+            tsS = self.side[:,start+window-lookback:start+window+slide]
+        else:
+            trS = tsS = []
 
         trX, trY = self.make(trD, trS, lookback)
         tsX, tsY = self.make(tsD, tsS, lookback)

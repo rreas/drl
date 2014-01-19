@@ -1,69 +1,100 @@
-from numpy import tanh, append, dot, reshape, absolute
+from numpy import tanh, append, dot, reshape, absolute, zeros, float64, mean
 from numpy.random import RandomState
 from numpy.linalg import norm
 
-from utils import sharpe
+from utils import sech2, sign
 
-class Linear:
+class Model:
+
+    def calc_r(self, d_t, d_prev, q):
+        return d_t*q - self.delta*absolute(d_t - d_prev)
+
+# FIXME: No bias term yet, no regularization, scaling of example vectors.
+class Linear(Model):
 
     def __init__(self, lookback=10, delta=0.01, lmb=1.):
         self.lookback = lookback
         self.delta = delta
         self.lmb = lmb
 
-    def initial_weights(self):
-        rs = RandomState(1)
-        self.w = rs.randn(lookback+2)
-        return self.w
+    def deflate(self, w, alpha):
+        return append(w, alpha)
+
+    def inflate(self, w):
+        return w[:-1], w[-1]
+
+    def weights(self, x, seed=1):
+        return RandomState(seed).randn(len(x[0])+1)
+
+    def decide(self, d_prev, x_t, w, alpha):
+        return tanh(dot(w, x_t) + alpha*d_prev)
+
+    def mean_return(self, params, x, y):
+        w, alpha = self.inflate(params)
+        total = d_t = d_prev = 0.
+
+        for i, x_t in enumerate(x):
+            d_t = self.decide(d_prev, x_t, w, alpha)
+            total += self.calc_r(d_t, d_prev, y[i])
+            d_prev = d_t
+
+        return total / len(y)
 
     def cost(self, params, x, y):
-        previous = 0.
-        gradient = zeros()
-        returns = []
+        return -1 * self.mean_return(params, x, y)
+#        w, alpha = self.inflate(params)
+#
+#        d_prev = self.decide(0., x[0], w, alpha)
+#        r_curr = self.calc_r(d_prev, 0., y[0])
+#        A_curr = r_curr
+#
+#        for i in range(1, len(y)):
+#            d_curr = self.decide(d_prev, x[i], w, alpha)
+#            r_curr = self.calc_r(d_curr, d_prev, y[i])
+#            A_curr = A_curr + (1./i) * (r_curr - A_curr)
+#            d_prev = d_curr
+#
+#        return A_curr
 
-        return None
+    def grad(self, params, x, y):
+        w, alpha = self.inflate(params)
 
-    def pred(self, params, x):
-        raise "Not implemented"
+        d_prev = self.decide(0., x[0], w, alpha)
 
-class Nonlinear:
+        d_prev_by_w = sech2(dot(w, x[0])) * x[0]
+        r_prev_by_w = d_prev_by_w*y[0] - self.delta*sign(d_prev)*d_prev_by_w
+        A_prev_by_w = r_prev_by_w
 
-    def __init__(self, hidden=10, lookback=10, delta=0.01, lmb=1.):
-        self.hidden = hidden
-        self.lookback = lookback
-        self.delta = 0.01
-        self.lmb = 1.
-        self.shape_w = (self.lookback+2, self.hidden)
+        d_prev_by_alpha = r_prev_by_alpha = A_prev_by_alpha = 0.
 
-    def initial_weights(self, seed=1):
-        rs = RandomState(1)
-        self.h = rs.randn(self.hidden)
-        self.W = rs.randn(self.lookback+2, self.hidden)
-        return self.compress(self.h, self.W)
+        for i in range(1, len(y)):
+            x_t = x[i]
+            q_t = y[i]
 
-    def retval(self, y, pred, previous):
-        return pred*y - self.delta*absolute(pred-previous)
+            d_t = self.decide(d_prev, x_t, w, alpha)
+            d_i = dot(w, x_t) + alpha*d_prev
 
-    def pred(self, params, x):
-        h, W = self.uncompress(params)
-        return tanh(dot(h, tanh(dot(W.T, x))))
+            d_t_by_w = sech2(d_i) * (x_t + alpha*d_prev_by_w)
+            r_t_by_w = d_t_by_w*q_t - self.delta*sign(d_t - d_prev)*(d_t_by_w - d_prev_by_w)
+            A_t_by_w = A_prev_by_w + (1./(i+1))*(r_t_by_w - A_prev_by_w)
 
-    def compress(self, h, W):
-        return append(h, reshape(W, W.size), axis=0)
+            if i == 1:
+                d_t_by_alpha = sech2(d_i) * d_prev
+            else:
+                d_t_by_alpha = sech2(d_i) * (alpha * d_prev_by_alpha + d_prev)
 
-    def uncompress(self, params):
-        h = params[0:self.hidden]
-        W = reshape(params[self.hidden:], self.W.shape)
-        return h, W
+            r_t_by_alpha = d_t_by_alpha*q_t - (
+                    self.delta*sign(d_t - d_prev)*(d_t_by_alpha - d_prev_by_alpha))
+            A_t_by_alpha = A_prev_by_alpha + (1./(i+1))*(r_t_by_alpha - A_prev_by_alpha)
 
-    def cost(self, params, x, y):
-        previous = 0.
-        returns = []
+            d_prev = d_t
 
-        for i in range(0, len(x)):
-            example = append(x[i], [previous, 1.])
-            pred = self.pred(params, example)
-            returns.append(self.retval(y[i], pred, previous))
-            previous = pred
+            d_prev_by_w = d_t_by_w
+            r_prev_by_w = r_t_by_w
+            A_prev_by_w = A_t_by_w
 
-        return -1.*sharpe(returns) + self.lmb*norm(params)
+            d_prev_by_alpha = d_t_by_alpha
+            r_prev_by_alpha = r_t_by_alpha
+            A_prev_by_alpha = A_t_by_alpha
+
+        return -1 * append(A_t_by_w, A_t_by_alpha)

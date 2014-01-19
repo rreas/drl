@@ -1,12 +1,18 @@
-from numpy import mean, std, zeros, max, min, exp
+from numpy import mean, std, zeros, max, min, exp, tanh
 from numpy.random import RandomState
 from numpy.linalg import norm
+
+def sech2(data):
+    return 1 - tanh(data)**2
+
+def sign(value):
+    return -1. if value < 0 else 1.
 
 def sharpe(returns):
     return mean(returns) / std(returns)
 
-def cost(returns, params):
-    return -1*sharpe(returns) + norm(params)**2
+
+
 
 def synthetic(n, phi=0.9, k=3, var=1, seed=1):
     """Auto-regressive test data generator."""
