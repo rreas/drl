@@ -69,13 +69,11 @@ class Nonlinear(Model):
 
         h_prev_by_W = zeros((w.size, W.shape[0], W.shape[1]))
         for i in range(self.hidden):
-            for j in range(self.exlen):
-                h_prev_by_W[i][i][j] = sech2(dot(W[i,:], x_t)) * x_t[j]
+            h_prev_by_W[i,:,:] = sech2(dot(W[i,:], x_t)) * x_t
 
-        d_prev_by_W = zeros(W.shape)
+        d_prev_by_W = zeros(W.shape) + sech2(dot(w, h_t))
         for i in range(self.hidden):
-            for j in range(self.exlen):
-                d_prev_by_W[i][j] = sech2(dot(w, h_t)) * w[i]*h_prev_by_W[i][i][j]
+            d_prev_by_W[i,:] *= w[i]*h_prev_by_W[i,i,:]
 
         r_prev_by_W = d_prev_by_W*y[0] - self.delta*sign(d_prev)*d_prev_by_W
         A_prev_by_W = r_prev_by_W
@@ -98,7 +96,6 @@ class Nonlinear(Model):
             h_t_by_W = zeros((w.size, W.shape[0], W.shape[1]))
             for k in range(w.size):
                 a = sech2(dot(W[k,:], x_t) + alpha[k]*d_prev)
-
                 for i in range(W.shape[0]):
                     for j in range(W.shape[1]):
                         b = alpha[k]*d_prev_by_W[i][j]

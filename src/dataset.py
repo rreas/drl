@@ -41,7 +41,7 @@ class Dataset:
         trX, trY = self.make(trD, trS, lookback)
         tsX, tsY = self.make(tsD, tsS, lookback)
 
-        return trX, trY, tsX, tsY
+        return array(trX), trY, array(tsX), tsY
 
     def gen(self, window=100, lookback=10, slide=50):
         start = 0
