@@ -1,9 +1,20 @@
 from sys import path
 path.append('src/')
 
-from network import Network
+import cPickle
 
-with(open('data/jnj.csv', 'r')
+from dataset import Dataset
+from models import Linear, Nonlinear
+from trainer import Trainer
 
-network = Network([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], size=5, lookback=2)
-network.train()
+with open('tests/fixtures.pkl', 'rb') as pkl:
+    prices_jnj = cPickle.load(pkl)
+    prices_apl = cPickle.load(pkl)
+
+    
+    data = Dataset(prices_jnj, [])
+    #model = Nonlinear(delta=0.01, hidden=10)
+    model = Linear(delta=0.01)
+    trainer = Trainer(data, model)
+
+    trainer.train(100, 5, 20)
