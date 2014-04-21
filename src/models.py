@@ -28,6 +28,9 @@ class Model:
     def cost(self, params, x, y):
         return -1 * self.mean_return(params, x, y)
 
+    def mean_return(self, params, x, y):
+        return mean(self.returns(params, x, y))
+
 class Nonlinear(Model):
 
     def __init__(self, delta=0.01, lmb=1., hidden=10):
@@ -136,19 +139,18 @@ class Nonlinear(Model):
 
         return -1 * concatenate((A_t_by_W.reshape((A_t_by_W.size,)), A_t_by_w, A_t_by_alpha))
     
-# FIXME: refactor to dry
-    def mean_return(self, params, x, y):
+    def returns(self, params, x, y):
         W, w, alpha = self.inflate(params)
-        total = d_t = d_prev = 0.
+        returns = zeros(x.shape[0])
+        d_t = d_prev = 0.
 
         for i, x_t in enumerate(x):
             d_t = self.decide(d_prev, x_t, W, w, alpha)
-            total += self.calc_r(d_t, d_prev, y[i])
+            returns[i] = self.calc_r(d_t, d_prev, y[i])
             d_prev = d_t
 
-        return total / len(y)
+        return returns
 
-# FIXME: no regularization, scaling of example vectors.
 class Linear(Model):
 
     def deflate(self, w, alpha):
@@ -163,16 +165,17 @@ class Linear(Model):
     def decide(self, d_prev, x_t, w, alpha):
         return tanh(dot(w, x_t) + alpha*d_prev)
 
-    def mean_return(self, params, x, y):
+    def returns(self, params, x, y):
+        returns = zeros(x.shape[0])
         w, alpha = self.inflate(params)
-        total = d_t = d_prev = 0.
+        d_t = d_prev = 0.
 
         for i, x_t in enumerate(x):
             d_t = self.decide(d_prev, x_t, w, alpha)
-            total += self.calc_r(d_t, d_prev, y[i])
+            returns[i] = self.calc_r(d_t, d_prev, y[i])
             d_prev = d_t
 
-        return total / len(y)
+        return returns
 
     def grad(self, params, x, y):
         w, alpha = self.inflate(params)

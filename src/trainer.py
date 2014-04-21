@@ -1,5 +1,8 @@
-from numpy import sqrt, power, zeros, array, std, mean
+from numpy import sqrt, power, zeros, array, std, mean, append
 from scipy.stats import zscore
+from scipy.optimize import minimize
+
+from utils import sharpe, wealth
 
 class Trainer:
 
@@ -7,34 +10,50 @@ class Trainer:
         self.dataset = dataset
         self.model = model
 
-    def train(self, window, lookback, slide, maxiter=50):
-        start = 0
-        trX, trY, tsX, tsY = self.dataset.build(start, window, lookback, slide)
-        
-        # Bias is first element.
-        #for i in range(1, trX.shape[1]):
-        #    m = mean(trX[:,i])
-        #    s = std(trX[:,i])
+    def scale(self, trX, tsX):
+        for i in range(trX.shape[1]):
+            vec = trX[:,i]
+            m = mean(vec)
+            s = std(vec)
 
-        #    trX[:,i] = (trX[:,i] - m) / s
-        #    tsX[:,i] = (tsX[:,i] - m) / s
+            if s == 0:
+                continue # Assume bias column so no need to scale.
+
+            trX[:,i] = (trX[:,i] - m) / s
+            tsX[:,i] = (tsX[:,i] - m) / s
+
+    def train(self, window=100, lookback=5, slide=50, maxiter=100):
+        returns = array([])
+        for trX, trY, tsX, tsY in self.dataset.gen(window=window,
+                lookback=lookback, slide=slide):
+            returns = append(returns, self.run(trX, trY, tsX, tsY, maxiter))
+
+        return returns
+
+class AdaGradTrainer(Trainer):
+
+    def run(self, trX, trY, tsX, tsY, maxiter):
+        self.scale(trX, tsX)
 
         weights = self.model.weights(trX, seed=1)
         gradients = zeros(weights.shape)
+
+        trR = zeros(maxiter+1)
+        tsR = zeros(maxiter+1)
 
         for i in range(maxiter):
             # Update weights with SGD.
             cost = self.model.cost(weights, trX, trY)
             gradient = self.model.grad(weights, trX, trY)
             gradients += power(gradient, 2)
-
             rate = 1. / sqrt(gradients)
-
             weights = weights - rate*gradient
 
-            print "Iter ", i+1, ": ", self.model.mean_return(weights, tsX, tsY)
+        returns = self.model.returns(weights, tsX, tsY)
 
-        print weights
+        s = sharpe(returns)
+        w = wealth(returns)
+        print "Test: Sharpe %.10f, Wealth %f" % (s[-1], w[-1])
 
-        return weights
+        return returns
 

@@ -1,4 +1,4 @@
-from numpy import array, float64, append, log
+from numpy import array, float64, append
 
 class Dataset:
     
@@ -20,7 +20,7 @@ class Dataset:
 
             # Add in side information relative to prices.
             for s in side:
-                temp_x = append(temp_x, log(s[i:j] / data[i:j]))
+                temp_x = append(temp_x, (s[i+1:j] - s[i:j-1]) / s[i:j-1])
 
             # Save the example with bias and label just created.
             x.append(append(1, temp_x))
