@@ -1,13 +1,10 @@
 from sys import path
 path.append('src/')
 
-from sys import path
-path.append('src/')
-
 import matplotlib.pyplot as plt
 from numpy import append, zeros
 
-from trainer import AdaGradTrainer
+from trainer import ValidatingTrainer
 from models import Nonlinear, Linear
 from dataset import Dataset
 from utils import synthetic, wealth, sharpe
@@ -15,34 +12,27 @@ from utils import synthetic, wealth, sharpe
 window = 100
 slide = 50
 lookback = 5
-delta = 0.0
-lmb = 0.1
+series = synthetic(501, seed=1)
+data = Dataset(series[0:-1], [series[1:]])
 
-hidden = 15
+models = []
+for delta in [0.001]:
+    for lmb in [0.0001, 0.001, 0.01]:
+        models.append(Linear(delta=delta, lmb=lmb))
 
-model = Linear(delta=delta, lmb=lmb)
-#model = Nonlinear(delta=delta, lmb=lmb, hidden=hidden)
+trainer = ValidatingTrainer(data, models)
 
-series = synthetic(10000, seed=1)
-data = Dataset(series, [])
-trainer = AdaGradTrainer(data, model)
+returns, decisions = trainer.train(window=window, lookback=lookback,
+        slide=slide, maxiter=100)
 
-returns = trainer.train(window=window, lookback=lookback, slide=slide, maxiter=40)
-returns = append(zeros(len(series)-len(returns)), returns)
-
-# Linear     : 2,618,987,047.18
-# Nonlin (15): 2,272,781,214.71
-# Nonlin (10): 2,884,104,773.60
-# Nonlin (5) : 1,232,632,146.82
-
-# Linear: 
-
-print "Wealth: ", wealth(returns)[-1]
+padding = zeros(len(series)-len(returns))
+returns = append(padding, returns)
+decisions = append(padding, decisions)
 
 x_axis = range(len(series))
 
 # Two subplots, the axes array is 1-d
-f, axarr = plt.subplots(4, sharex=True)
+f, axarr = plt.subplots(5, sharex=True)
 axarr[0].plot(x_axis, series)
 axarr[0].set_title('Prices')
 axarr[1].plot(x_axis, wealth(returns))
@@ -51,5 +41,7 @@ axarr[2].plot(x_axis, sharpe(returns))
 axarr[2].set_title('Sharpe')
 axarr[3].plot(x_axis, returns)
 axarr[3].set_title('Returns')
-plt.show()
+axarr[4].plot(x_axis, decisions)
+axarr[4].set_title('Decisions')
+#plt.show()
 

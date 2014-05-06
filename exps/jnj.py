@@ -2,12 +2,13 @@ from sys import path
 path.append('src/')
 
 import cPickle
-from numpy import zeros
+from numpy import zeros, append
 import matplotlib.pyplot as plt
 
 from dataset import Dataset
 from models import Linear, Nonlinear
-from trainer import Trainer
+from trainer import AdaGradTrainer
+from utils import synthetic, wealth, sharpe
 
 from quote import get
 
@@ -47,13 +48,42 @@ else:
         nvs = cPickle.load(pkl)
         pfe = cPickle.load(pkl)
 
+window = 100
+slide = 50
+lookback = 5
+delta = 0.0005
+lmb = 0.1
+
+hidden = 10
+
+model = Linear(delta=delta, lmb=lmb)
+#model = Nonlinear(delta=delta, lmb=lmb, hidden=hidden)
+
 data = Dataset(cov, [jnj, nvs, pfe])
-#model = Nonlinear(delta=0.01, hidden=3)
-model = Linear(delta=0.01)
-trainer = Trainer(data, model)
+trainer = AdaGradTrainer(data, model)
 
-_, trR, tsR = trainer.train(1000, 5, 100, maxiter=500)
+returns, decisions = trainer.train(
+        window=window, lookback=lookback, slide=slide, maxiter=40)
+padding = zeros(len(jnj)-len(returns))
+returns = append(padding, returns)
+decisions = append(padding, decisions)
 
-x = range(len(trR))
-plt.plot(x, trR, 'r', x, tsR, 'b')
+print "Wealth: ", wealth(returns)[-1]
+
+x_axis = range(len(jnj))
+
+# Two subplots, the axes array is 1-d
+f, axarr = plt.subplots(2, sharex=True)
+axarr[0].plot(x_axis, jnj / jnj[0], 'r', label='Prices')
+axarr[0].plot(x_axis, wealth(returns), 'b', label='Wealth')
+axarr[0].set_title('Performance')
+axarr[0].legend(loc="upper left")
+
+#axarr[1].plot(x_axis, sharpe(returns))
+#axarr[1].set_title('Sharpe')
+#axarr[3].plot(x_axis, returns)
+#axarr[3].set_title('Returns')
+axarr[1].plot(x_axis, decisions)
+axarr[1].set_title('Decisions')
 plt.show()
+

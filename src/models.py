@@ -26,10 +26,14 @@ class Model:
         self.lmb = lmb
 
     def cost(self, params, x, y):
-        return -1 * self.mean_return(params, x, y)
+        return -1 * self.mean_return(params, x, y) + self.lmb*dot(params, params)
 
     def mean_return(self, params, x, y):
-        return mean(self.returns(params, x, y))
+        returns, _ = self.returns(params, x, y)
+        return mean(returns)
+
+    def __str__(self):
+        return "Delta: %f Lambda: %f" % (self.delta, self.lmb)
 
 class Nonlinear(Model):
 
@@ -137,19 +141,23 @@ class Nonlinear(Model):
             r_prev_by_alpha = r_t_by_alpha
             A_prev_by_alpha = A_t_by_alpha
 
-        return -1 * concatenate((A_t_by_W.reshape((A_t_by_W.size,)), A_t_by_w, A_t_by_alpha))
+        return -1 * concatenate((A_t_by_W.reshape((A_t_by_W.size,)), A_t_by_w,
+            A_t_by_alpha)) + 2*self.lmb*params
     
     def returns(self, params, x, y):
         W, w, alpha = self.inflate(params)
-        returns = zeros(x.shape[0])
         d_t = d_prev = 0.
+
+        returns = zeros(x.shape[0])
+        decisions = zeros(x.shape[0])
 
         for i, x_t in enumerate(x):
             d_t = self.decide(d_prev, x_t, W, w, alpha)
             returns[i] = self.calc_r(d_t, d_prev, y[i])
+            decisions[i] = d_t
             d_prev = d_t
 
-        return returns
+        return returns, decisions
 
 class Linear(Model):
 
@@ -166,16 +174,19 @@ class Linear(Model):
         return tanh(dot(w, x_t) + alpha*d_prev)
 
     def returns(self, params, x, y):
-        returns = zeros(x.shape[0])
         w, alpha = self.inflate(params)
         d_t = d_prev = 0.
+
+        returns = zeros(x.shape[0])
+        decisions = zeros(x.shape[0])
 
         for i, x_t in enumerate(x):
             d_t = self.decide(d_prev, x_t, w, alpha)
             returns[i] = self.calc_r(d_t, d_prev, y[i])
+            decisions[i] = d_t
             d_prev = d_t
 
-        return returns
+        return returns, decisions
 
     def grad(self, params, x, y):
         w, alpha = self.inflate(params)
@@ -218,4 +229,4 @@ class Linear(Model):
             r_prev_by_alpha = r_t_by_alpha
             A_prev_by_alpha = A_t_by_alpha
 
-        return -1 * append(A_t_by_w, A_t_by_alpha)
+        return -1 * append(A_t_by_w, A_t_by_alpha) + 2*self.lmb*params

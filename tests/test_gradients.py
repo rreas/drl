@@ -32,7 +32,7 @@ class TestGradients(unittest.TestCase):
                               self.trX,
                               self.trY)
 
-            self.assertTrue(diff < 1.e-6, diff)
+            self.assertTrue(diff < 1.e-5, diff)
 
     def test_nonlinear_mean_return_model(self):
         model = Nonlinear(delta=0.1, lmb=1., hidden=7)
@@ -44,4 +44,4 @@ class TestGradients(unittest.TestCase):
                               self.trX,
                               self.trY)
 
-            self.assertTrue(diff < 1.e-6, diff)
+            self.assertTrue(diff < 1.e-5, diff)

@@ -18,9 +18,10 @@ class TestDataset(unittest.TestCase):
         self.test_examples = []
         self.test_returns = []
 
-        for trX, trY, tsX, tsY in self.d.gen(window=window,
-                                             lookback=lookback,
-                                             slide=slide):
+        self.d.reset(window=window, lookback=lookback, slide=slide)
+
+        while(self.d.can_gen()):
+            trX, trY, tsX, tsY = self.d.gen()
             self.train_examples.append(trX)
             self.train_returns.append(trY)
             self.test_examples.append(tsX)

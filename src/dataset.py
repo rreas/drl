@@ -43,9 +43,17 @@ class Dataset:
 
         return array(trX), trY, array(tsX), tsY
 
-    def gen(self, window=100, lookback=10, slide=50):
-        start = 0
+    def reset(self, window=100, lookback=10, slide=50):
+        self.window = window
+        self.lookback = lookback
+        self.slide = slide
+        self.start = 0
 
-        while(start+window < len(self.data)):
-            yield self.build(start, window, lookback, slide)
-            start += slide
+    def can_gen(self):
+        return self.start + self.window < len(self.data)
+
+    def gen(self):
+        trX, trY, tsX, tsY = self.build(self.start, self.window, self.lookback, self.slide)
+        self.start += self.slide
+        return trX, trY, tsX, tsY
+
