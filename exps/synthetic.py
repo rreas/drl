@@ -8,40 +8,52 @@ from trainer import ValidatingTrainer
 from models import Nonlinear, Linear
 from dataset import Dataset
 from utils import synthetic, wealth, sharpe
+import plotter
 
-window = 100
-slide = 50
-lookback = 5
-series = synthetic(501, seed=1)
-data = Dataset(series[0:-1], [series[1:]])
+#series = synthetic(4001, seed=1)
+#data = Dataset(series[0:-1], [series[1:]])
 
-models = []
-for delta in [0.001]:
-    for lmb in [0.0001, 0.001, 0.01]:
-        models.append(Linear(delta=delta, lmb=lmb))
+series = synthetic(4000, seed=1)
+data = Dataset(series, [])
 
-trainer = ValidatingTrainer(data, models)
+#for window in [200]:
+#    for slide in [5]:
+#        for lookback in [10]:
+#            for delta in [0.001]:
+#
+#                models = []
+#                for lmb in [0.0, 0.0001, 0.001, 0.01]:
+#                    models.append(Linear(delta=delta, lmb=lmb))
+#
+#                trainer = ValidatingTrainer(data, models)
+#                returns, decisions = trainer.train(window=window, lookback=lookback,
+#                        slide=slide, maxiter=20)
+#
+#                filename = 'figures/synthetic_noside_single_w_%i_s_%i_l_%i_d_%f.pdf' % (
+#                        window, slide, lookback, delta)
+#                title = 'Single Layer - Synthetic (No Side Information)'
+#                print "%s\tWealth: %f\tSharpe: %f" % (filename,
+#                        wealth(returns)[-1], sharpe(returns)[-1])
+#                plotter.save(filename, title, series, returns, decisions)
 
-returns, decisions = trainer.train(window=window, lookback=lookback,
-        slide=slide, maxiter=100)
+for window in [200]:
+    for slide in [5]:
+        for lookback in [10]:
+            for delta in [0.001]:
+                models = []
 
-padding = zeros(len(series)-len(returns))
-returns = append(padding, returns)
-decisions = append(padding, decisions)
+                for hidden in [4, 6, 8]:
+                    for lmb in [0.0, 0.0001, 0.001, 0.01]:
+                        models.append(Nonlinear(delta=delta, lmb=lmb,
+                            hidden=hidden))
 
-x_axis = range(len(series))
+                trainer = ValidatingTrainer(data, models)
+                returns, decisions = trainer.train(window=window, lookback=lookback,
+                        slide=slide, maxiter=20)
 
-# Two subplots, the axes array is 1-d
-f, axarr = plt.subplots(5, sharex=True)
-axarr[0].plot(x_axis, series)
-axarr[0].set_title('Prices')
-axarr[1].plot(x_axis, wealth(returns))
-axarr[1].set_title('Wealth')
-axarr[2].plot(x_axis, sharpe(returns))
-axarr[2].set_title('Sharpe')
-axarr[3].plot(x_axis, returns)
-axarr[3].set_title('Returns')
-axarr[4].plot(x_axis, decisions)
-axarr[4].set_title('Decisions')
-#plt.show()
-
+                filename = 'figures/synthetic_noside_multi_w_%i_s_%i_l_%i_d_%f.pdf' % (
+                        window, slide, lookback, delta)
+                title = 'Multiple Layer - Synthetic (No Side Information)'
+                print "%s\tWealth: %f\tSharpe: %f" % (filename,
+                        wealth(returns)[-1], sharpe(returns)[-1])
+                plotter.save(filename, title, series, returns, decisions)
